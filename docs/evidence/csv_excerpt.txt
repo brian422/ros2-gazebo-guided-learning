@@ -1,0 +1,24 @@
+Sanitized mission CSV evidence
+Date: 2026-08-08
+Tested Git commit: not yet supplied
+Run type: high-threshold completion test (hazard_threshold = 20.0)
+
+time,x,y,yaw,linear_velocity,angular_velocity,hazard_level,mission_state
+32.600000,-0.000000,0.000000,-0.000812,0.000000,-1.200000,0.190728,MOVING_TO_WAYPOINT
+41.400000,-1.515548,-1.422713,-2.402295,0.000000,0.000000,0.229602,INSPECTING
+172.600000,3.457343,1.198117,1.174280,0.000000,0.000000,10.146841,MISSION_COMPLETE
+
+Result:
+- The header contains all eight required mission fields.
+- The MOVING_TO_WAYPOINT row contains a saturated -1.2 rad/s angular command,
+  consistent with the rover rotating toward its target at that instant.
+- The INSPECTING row contains zero linear and angular velocity commands.
+- The final MISSION_COMPLETE row also contains zero velocity commands.
+- Position, yaw, hazard, velocity, and state values changed during the run.
+- The final row was readable and complete after launch shutdown.
+
+Pass: required CSV fields, inspection stop, changing mission data, final stopped
+state, and readable closed-file behavior verified.
+
+This excerpt is evidence from the high-threshold completion run. It does not
+independently verify the zero-command row at the default-threshold hazard event.

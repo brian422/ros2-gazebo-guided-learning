@@ -1,0 +1,57 @@
+Final workspace-build and headless-launch evidence
+Date: 2026-08-08
+Tested Git commit: not yet supplied
+
+Build command:
+colcon build --symlink-install --packages-up-to hazard_inspection_bringup
+
+Observed build order and result:
+- hazard_inspection_description: finished
+- hazard_inspection_interfaces: finished
+- hazard_inspection_sim: finished
+- hazard_inspection_control: finished
+- hazard_inspection_bringup: finished
+- summary: 5 packages finished in 4.90 s
+- failed packages: none
+
+Package discovery after sourcing install/setup.bash:
+- hazard_inspection_bringup (ros.ament_python)
+- hazard_inspection_control (ros.ament_python)
+- hazard_inspection_description (ros.ament_cmake)
+- hazard_inspection_interfaces (ros.ament_cmake)
+- hazard_inspection_sim (ros.ament_python)
+
+Bringup prefix:
+- workspace install tree / hazard_inspection_bringup
+
+Headless launch command:
+ros2 launch hazard_inspection_bringup inspection_demo.launch.py gui:=false rviz:=false
+
+Observed ROS nodes:
+- /hazard_sensor_node
+- /mission_controller_node
+- /mission_logger_node
+- /mission_manager_node
+- /robot_state_publisher
+- /ros_gz_bridge
+
+Observed process selection:
+- Gazebo command included: gz sim -s -r -v 3
+- no rviz2 process was present
+
+Runtime checks:
+- /clock final reported average: 464.942 Hz over a 2326-message window
+- /odom published a finite pose and twist
+- odometry frame_id: odom
+- odometry child_frame_id: base_footprint
+
+Result:
+- All five workspace packages built without failure.
+- The bringup package was discoverable from the workspace install tree.
+- Headless arguments suppressed both graphical clients.
+- Gazebo server, ROS-Gazebo bridge, robot-state publisher, and all four project
+  nodes remained active.
+- Advancing simulation clock and finite odometry confirmed that the headless
+  server continued simulating the spawned rover.
+
+Pass: full workspace build and configurable headless bringup verified.

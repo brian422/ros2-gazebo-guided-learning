@@ -1,0 +1,28 @@
+Hazard response to rover position
+Date: 2026-08-08
+Tested Git commit: not yet supplied
+Source: sanitized high-threshold completion CSV excerpt
+
+Configured model values:
+- hazard-zone center: (3.50 m, 1.30 m)
+- baseline: 0.20
+- peak increase: 10.0
+- spread: 1.20 square metres
+- bounded noise amplitude: 0.05
+
+Observed far/start sample:
+- rover position: approximately (0.00 m, 0.00 m)
+- hazard level: 0.190728
+
+Observed near-zone sample:
+- rover position: (3.457343 m, 1.198117 m)
+- distance to configured zone center: approximately 0.110453 m
+- hazard level: 10.146841
+
+Result:
+- The start reading was close to the configured far-field baseline of 0.20.
+- The near-zone reading was close to baseline plus peak, subject to bounded
+  random noise.
+- The measured hazard increased by approximately 9.956 during the route.
+
+Pass: simulated hazard magnitude changed consistently with rover position.

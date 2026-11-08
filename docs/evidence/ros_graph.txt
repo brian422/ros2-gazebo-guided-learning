@@ -1,0 +1,56 @@
+Hazard Inspection Rover — Active ROS Graph Evidence
+============================================================
+
+Evidence supplied by the student on 2026-08-08 while the complete
+inspection_demo.launch.py system was running.
+
+Active nodes
+--------------------------------
+/hazard_sensor_node
+/mission_controller_node
+/mission_logger_node
+/mission_manager_node
+/robot_state_publisher
+/ros_gz_bridge
+/rviz2
+/transform_listener_impl_<generated_suffix>
+
+The transform-listener suffix is generated at runtime by RViz and is not a
+project interface name.
+
+Active topics
+--------------------------------
+/clock
+/cmd_vel
+/hazard/level
+/joint_states
+/mission/command
+/mission/path
+/mission/state
+/mission/status_marker
+/odom
+/parameter_events
+/robot_description
+/rosout
+/scan
+/tf
+/tf_static
+
+Mission services
+--------------------------------
+/mission/abort
+/mission/reset
+/mission/start
+
+Custom mission-state type
+--------------------------------
+hazard_inspection_interfaces/msg/MissionState
+
+Interpretation
+--------------------------------
+The active graph contains all required project nodes and the expected command,
+odometry, lidar, joint-state, hazard, mission, visualization, clock, and TF
+interfaces. Service behavior and topic data contents are validated separately.
+
+Tested Git commit: not supplied because the tested workspace was not yet a
+Git repository.

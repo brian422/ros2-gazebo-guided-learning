@@ -1,0 +1,45 @@
+Stale-hazard fail-safe evidence
+Date: 2026-08-08
+Tested Git commit: not yet supplied
+
+Initial active state:
+- simulation time: 34.000 s
+- state: 1
+- state_name: MOVING_TO_WAYPOINT
+- waypoint_index: 0
+- detail: Mission started; moving toward waypoint 0.
+
+Controlled fault injection:
+- mission_controller_node hazard_timeout changed from 1.0 s to 0.01 s
+- parameter update response: Set parameter successful
+- hazard sensor publication period: approximately 0.1 s at 10 Hz
+
+Observed safety response:
+- simulation time: 46.000 s
+- state: 6
+- state_name: ABORTED
+- waypoint_index: 0
+- detail: Mission aborted because hazard data is missing or stale.
+
+Observed command after abort:
+- linear [x, y, z]: [0.0, 0.0, 0.0]
+- angular [x, y, z]: [0.0, 0.0, 0.0]
+
+Restoration:
+- reset service response: success=True
+- hazard_timeout restored to 1.0 s
+- hazard_threshold restored to 6.0
+- both parameter updates reported success and were queried afterward
+
+Result:
+- The controller detected that hazard data did not satisfy its freshness
+  requirement while the mission was active.
+- It entered ABORTED with an explicit stale/missing-data explanation.
+- It published a completely zero Twist after the fault.
+- Normal validation parameters were restored after the isolated test.
+
+Pass: stale hazard data caused a stopped fail-safe mission state.
+
+This test deliberately made valid 10 Hz samples stale by setting the controller
+timeout below their normal publication interval. It did not simulate a physical
+sensor failure or assess hardware fault coverage.

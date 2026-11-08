@@ -1,0 +1,30 @@
+High-threshold mission-completion evidence
+Date: 2026-08-08
+Tested Git commit: not yet supplied
+
+Test configuration:
+- mission_controller_node hazard_threshold: 20.0
+- predefined route: waypoint 0, transit waypoint 1, waypoint 2
+- inspection duration: 2.0 seconds
+
+Sanitized state transitions from the student-run ROS 2 topic capture:
+
+29.500 s | IDLE               | waypoint 0 | Mission reset; waiting for a start request.
+32.503 s | MOVING_TO_WAYPOINT | waypoint 0 | Mission started; moving toward waypoint 0.
+41.350 s | INSPECTING         | waypoint 0 | Waypoint 0 reached; inspecting.
+43.350 s | MOVING_TO_WAYPOINT | waypoint 1 | Moving toward waypoint 1.
+57.100 s | MOVING_TO_WAYPOINT | waypoint 2 | Transit waypoint 1 reached; moving toward waypoint 2.
+67.400 s | INSPECTING         | waypoint 2 | Waypoint 2 reached; inspecting.
+69.400 s | MISSION_COMPLETE   | waypoint 2 | Final inspection completed.
+
+Result:
+- Both configured inspection waypoints were reached.
+- The transit waypoint was passed.
+- Each observed inspection lasted approximately 2.0 seconds.
+- The controller entered MISSION_COMPLETE after the final inspection.
+- No hazard or retreat state occurred during this deliberately high-threshold
+  completion-branch test.
+
+Pass: nominal high-threshold completion branch verified.
+
+The normal hazard threshold must be restored to 6.0 after this test.

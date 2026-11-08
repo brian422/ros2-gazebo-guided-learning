@@ -1,0 +1,39 @@
+Hazard Inspection Rover — Unit-Test Evidence
+============================================================
+
+Evidence supplied by the student on 2026-08-08.
+Private absolute home-directory paths have been omitted.
+
+Environment reported by pytest
+--------------------------------
+Linux
+Python 3.10.12
+pytest 6.2.5
+
+hazard_inspection_sim
+--------------------------------
+Collected: 10 tests
+Result:    10 passed
+Duration:  0.03 seconds
+
+Test file:
+  test/test_hazard_math.py .......... [100%]
+
+hazard_inspection_control
+--------------------------------
+Collected: 18 tests
+Result:    18 passed
+Duration:  0.03 seconds
+
+Test files:
+  test/test_control_math.py .......... [55%]
+  test/test_state_machine.py ........ [100%]
+
+Combined result
+--------------------------------
+28 authored test cases passed across the two package test runs.
+No test errors or failures were reported in either package run.
+
+Tested Git commit: not supplied because the tested workspace was not yet a
+Git repository. A final combined colcon test after Git initialization is
+recommended so this evidence can be tied to an exact revision.

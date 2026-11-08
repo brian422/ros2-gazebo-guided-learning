@@ -1,0 +1,44 @@
+Operator-abort and velocity-limit evidence
+Date: 2026-08-08
+Tested Git commit: not yet supplied
+Source run: mission_20260808T093303Z.csv
+
+Observed state before the operator abort:
+- state_name: MOVING_TO_WAYPOINT
+- waypoint_index: 0
+- detail: Mission started; moving toward waypoint 0.
+
+Observed state after the operator abort:
+- state: 6
+- state_name: ABORTED
+- waypoint_index: 1
+- detail: Operator requested abort.
+
+CSV transition excerpt:
+
+time,x,y,yaw,linear_velocity,angular_velocity,hazard_level,mission_state
+34.200000,-1.028998,-1.464106,-0.021482,0.350000,0.023618,0.228737,MOVING_TO_WAYPOINT
+34.300000,-0.996465,-1.464787,-0.020839,0.000000,0.000000,0.160810,ABORTED
+
+CSV verification summary:
+- rows: 485
+- ABORTED rows: 143
+- first ABORTED row: 34.300000 s
+- last recorded state: ABORTED
+- first and last ABORTED linear velocity: 0.000000 m/s
+- first and last ABORTED angular velocity: 0.000000 rad/s
+- maximum absolute linear command: 0.350000 m/s
+- maximum absolute angular command: 1.200000 rad/s
+
+Configured limits:
+- maximum linear speed: 0.35 m/s
+- maximum angular speed: 1.20 rad/s
+
+Result:
+- The recorded commands did not exceed either configured limit.
+- The controller changed from active waypoint motion to ABORTED after the
+  operator request.
+- The first ABORTED sample contained zero linear and angular commands.
+- The mission remained stopped for all subsequent recorded ABORTED samples.
+
+Pass: command saturation and operator-requested safe stop verified.

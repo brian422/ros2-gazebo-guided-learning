@@ -1,0 +1,33 @@
+mission_controller_node:
+  ros__parameters:
+    enable_motion: true
+
+    # Known odom-frame route: station 1, passage exit, station 2.
+    waypoints_x: [-1.60, 2.40, 3.50]
+    waypoints_y: [-1.50, -1.50, 1.30]
+    waypoint_types: [inspection, transit, inspection]
+
+    # Educational proportional controller.
+    max_linear_speed: 0.35
+    max_angular_speed: 1.20
+    retreat_linear_speed: 0.25
+    linear_gain: 0.80
+    angular_gain: 2.00
+    position_tolerance: 0.12
+    heading_alignment_tolerance: 0.35
+    inspection_duration: 2.00
+    control_frequency: 20.0
+    status_publish_frequency: 2.0
+
+    # Safety checks and visible stop before retreat.
+    hazard_threshold: 6.00
+    hazard_timeout: 1.00
+    odom_timeout: 0.50
+    hazard_stop_duration: 0.50
+
+mission_logger_node:
+  ros__parameters:
+    output_directory: ~/.ros/hazard_inspection_rover/logs
+    file_prefix: mission
+    logging_frequency: 10.0
+    flush_every_rows: 10

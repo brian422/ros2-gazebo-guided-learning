@@ -1,0 +1,46 @@
+Hazard Inspection Rover — Default Hazard-Retreat State Evidence
+============================================================
+
+Evidence supplied by the student on 2026-08-08.
+Repeated 2 Hz status messages were reduced to unique transitions.
+
+Observed transitions
+--------------------------------
+Simulation time 55.000 s
+  State: MOVING_TO_WAYPOINT
+  Waypoint index: 1
+  Detail: Moving toward waypoint 1.
+
+Simulation time 56.450 s
+  State: MOVING_TO_WAYPOINT
+  Waypoint index: 2
+  Detail: Transit waypoint 1 reached; moving toward waypoint 2.
+
+Simulation time 64.200 s
+  State: HAZARD_DETECTED
+  Waypoint index: 2
+  Detail: Hazard threshold exceeded: measured 6.041.
+
+Simulation time 64.700 s
+  State: RETREATING
+  Waypoint index: 2
+  Detail: Retreat initiated toward the previous safe waypoint.
+
+Simulation time 76.400 s
+  State: ABORTED
+  Waypoint index: 2
+  Detail: Safe waypoint reached; mission remains aborted.
+
+Interpretation
+--------------------------------
+The controller advanced through the known transit waypoint, approached the
+final inspection waypoint, detected a 6.041 hazard reading, exposed
+HAZARD_DETECTED for 0.5 seconds, entered RETREATING, reached the previous safe
+waypoint after 11.7 seconds of retreat, and ended in the stopped ABORTED state.
+
+The supplied capture began after waypoint 0, so it does not independently
+record the earlier INSPECTING state. That transition remains a separate
+evidence item.
+
+Tested Git commit: not supplied because the tested workspace was not yet a
+Git repository.

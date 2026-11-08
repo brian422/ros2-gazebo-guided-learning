@@ -1,0 +1,49 @@
+# ROS 2 / colcon generated directories
+build/
+install/
+log/
+
+# Python generated files
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editors and operating systems
+.vscode/
+.idea/
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary previews and unsanitized evidence captures
+/tmp/
+/evidence_output/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+private/
+local_notes/
+
+# ROS bag and database recordings can be large or contain local data
+rosbag2_*/
+*.db3
+*.mcap
+
+# Mission output generated at runtime
+mission_logs/
+*.csv
+
+# Private application drafts and local evidence originals
+application_drafts/
+private_notes/
+*.bak

@@ -1,0 +1,37 @@
+Invalid-hazard fail-safe evidence
+Date: 2026-08-08
+Tested Git commit: not yet supplied
+
+Injected message:
+
+ros2 topic pub --once /hazard/level std_msgs/msg/Float64 "{data: .nan}"
+publishing #1: std_msgs.msg.Float64(data=nan)
+
+Observed mission state after injection:
+
+stamp: 27.000000000 s
+state: 6
+state_name: ABORTED
+waypoint_index: 0
+detail: Mission aborted because hazard data is invalid.
+
+Observed command after injection:
+
+linear:  [0.0, 0.0, 0.0]
+angular: [0.0, 0.0, 0.0]
+
+Result:
+- A deliberately invalid floating-point hazard measurement was published.
+- The controller rejected the non-finite measurement.
+- The active mission entered ABORTED with an explicit diagnostic detail.
+- All six Twist components were zero after the abort.
+- Subsequent valid hazard publications do not restart an aborted mission; an
+  operator reset is required.
+
+Pass: invalid hazard data caused a stopped fail-safe mission state.
+
+Note: mission-state samples at 52, 64, and 80 seconds supplied alongside this
+test came from a separate completed run and are not used as part of this
+invalid-data evidence record. The invalid-data callback changes state to
+ABORTED only when the state machine is active, so the observed transition also
+confirms that the injected sample was handled during an active mission.

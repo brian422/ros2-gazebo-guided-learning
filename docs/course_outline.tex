@@ -1,0 +1,822 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{hyperref}
+
+\definecolor{RoverBlue}{HTML}{1F4E79}
+\definecolor{HazardOrange}{HTML}{C55A11}
+\definecolor{SoftGray}{HTML}{F2F2F2}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=RoverBlue,
+  urlcolor=RoverBlue,
+  pdftitle={Hazard Inspection Rover: Six-Module Course Outline},
+  pdfauthor={hazard_inspection_rover contributors}
+}
+
+\setlist[itemize]{leftmargin=1.5em, itemsep=0.25em, topsep=0.35em}
+\setlist[enumerate]{leftmargin=1.7em, itemsep=0.25em, topsep=0.35em}
+\renewcommand{\arraystretch}{1.2}
+
+\newcommand{\projectname}{\texttt{hazard\_inspection\_rover}}
+\newcommand{\ros}{ROS~2 Humble}
+\newcommand{\gazebo}{Gazebo Harmonic}
+\newcommand{\keypoint}[1]{%
+  \begin{center}
+    \fcolorbox{HazardOrange}{SoftGray}{%
+      \parbox{0.9\textwidth}{\textbf{Key point:} #1}%
+    }
+  \end{center}
+}
+
+\title{%
+  \textcolor{RoverBlue}{\textbf{Hazard Inspection Rover}}\\[0.35em]
+  \large Six-Module ROS 2 Course Outline
+}
+\author{Beginner-to-Intermediate Robotics Portfolio Course}
+\date{Target environment: Ubuntu 22.04.5 LTS, WSL2, Python 3.10, ROS 2 Humble}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This guided course develops a small differential-drive inspection-rover
+simulation as a credible robotics software portfolio project. It is designed
+for a mechanical engineer who understands physical systems, modeling, testing,
+and failure analysis but has limited practical ROS~2 experience. The project
+emphasizes system integration, explicit interfaces, simple feedback control,
+defensive behavior, and evidence-based validation. It does not claim SLAM,
+artificial intelligence, machine learning, optimal control, full autonomy, or
+field readiness.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Course purpose and engineering context}
+
+The completed \projectname{} project simulates a small differential-drive
+mobile robot performing a predefined inspection route in a simplified
+industrial environment. The rover publishes odometry, laser scans, joint
+states, transforms, mission state, and a mathematically simulated hazard
+reading. A deliberately simple proportional waypoint controller moves the
+robot between inspection stations. If the hazard level becomes excessive, or
+if required sensor data becomes stale or invalid, the controller commands a
+stop and enters a defined retreat or abort behavior. Mission data are recorded
+to CSV for later inspection.
+
+For a mechanical engineer, the important transition is from analyzing an
+individual physical component to reasoning about a distributed robotic system.
+The course connects familiar engineering habits---coordinate systems,
+free-body reasoning, parameter selection, tolerances, failure modes, test
+evidence, and traceability---to ROS~2 software concepts.
+
+\subsection{Technical scope}
+
+The target software environment is:
+
+\begin{itemize}
+  \item Ubuntu 22.04.5 LTS (Jammy) under WSL2;
+  \item Python 3.10 through \texttt{python3};
+  \item \ros{};
+  \item \gazebo{}, using \texttt{ros\_gz} integration rather than Gazebo
+        Classic;
+  \item RViz2 and VS Code connected to WSL;
+  \item no physical hardware, proprietary software, ROS~1, or required Docker
+        environment.
+\end{itemize}
+
+\subsection{Learning philosophy}
+
+The course follows the progression
+
+\begin{center}
+\textbf{communicate $\rightarrow$ model $\rightarrow$ simulate
+$\rightarrow$ decide $\rightarrow$ integrate $\rightarrow$ validate}.
+\end{center}
+
+Each module adds one major source of complexity while preserving the student's
+ability to inspect the system. A module ends with a verification gate: the
+student predicts behavior, runs the system, collects evidence, explains the
+result, and makes a small modification. The next module should begin only after
+that gate is passed.
+
+\section{Selected software architecture}
+
+The project uses five packages with explicit responsibilities.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+\textbf{Package} & \textbf{Build type} & \textbf{Responsibility} \\
+\midrule
+\texttt{hazard\_inspection\_description}
+  & \texttt{ament\_cmake}
+  & Xacro robot model, primitive geometry, inertial properties, and RViz2
+    configuration. \\
+\texttt{hazard\_inspection\_sim}
+  & \texttt{ament\_python}
+  & Gazebo world and simulation assets, spawning support, and mathematical
+    hazard-sensor node. \\
+\texttt{hazard\_inspection\_control}
+  & \texttt{ament\_python}
+  & Waypoint controller, finite-state mission logic, mission services, CSV
+    logger, and testable control calculations. \\
+\texttt{hazard\_inspection\_interfaces}
+  & \texttt{ament\_cmake}
+  & A small, strongly typed mission-state message. Standard services are used
+    where they are sufficient. \\
+\texttt{hazard\_inspection\_bringup}
+  & \texttt{ament\_python}
+  & Main launch file, integrated parameter files, and ROS--Gazebo bridge
+    configuration. \\
+\bottomrule
+\end{tabularx}
+\caption{Target ROS 2 package responsibilities.}
+\end{table}
+
+This structure is intentionally more disciplined than placing every file in a
+single package. It teaches dependency ownership and makes it possible to test
+control logic without loading robot descriptions or launching the simulator.
+The additional packaging overhead is small enough for a beginner and produces
+a clearer portfolio repository.
+
+\section{Why the course uses this order}
+
+The ordering is dependency-driven and risk-driven.
+
+\begin{enumerate}
+  \item \textbf{Communication comes first.} A student must be able to build,
+        source, run, and inspect ROS~2 nodes before debugging a robot model or
+        simulator. Otherwise, a simple workspace error can be mistaken for a
+        physics or control problem.
+  \item \textbf{The robot model precedes simulation.} Frames, joint axes,
+        dimensions, collision shapes, and inertial properties define what the
+        simulator will act on. RViz2 provides a lower-complexity environment in
+        which to verify that structure before physics is introduced.
+  \item \textbf{Simulation precedes mission behavior.} Odometry and laser data
+        are the controller's inputs. Establishing their topic names, units,
+        frames, signs, and update rates first prevents control debugging from
+        becoming mixed with bridge debugging.
+  \item \textbf{Hazard sensing and state logic are isolated before motion is
+        integrated.} A safety response should be testable as a decision system,
+        not only by watching a moving robot. This allows deterministic testing
+        of thresholds, invalid inputs, and services.
+  \item \textbf{Full motion is integrated only after interfaces are stable.}
+        The waypoint controller then connects known inputs and outputs. Problems
+        can be localized to sensing, decision logic, actuation, or configuration.
+  \item \textbf{Portfolio work follows technical validation.} Screenshots and
+        claims should describe demonstrated behavior. Tests and a validation
+        matrix are completed before the final README, video, resume bullets, and
+        statement-of-purpose descriptions are treated as evidence.
+\end{enumerate}
+
+This order also mirrors a conservative engineering development process:
+component checks are followed by subsystem checks, integration, fault
+injection, and documented acceptance evidence.
+
+\section{Course-at-a-glance}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}c l c X@{}}
+\toprule
+\textbf{Module} & \textbf{Theme} & \textbf{Time} & \textbf{Primary evidence} \\
+\midrule
+1 & ROS 2 fundamentals & 2--3 h
+  & Two discoverable nodes exchange a typed message at the predicted rate. \\
+2 & Robot model and TF & 3--5 h
+  & A dimensionally consistent rover and correct frame tree appear in RViz2. \\
+3 & Gazebo simulation & 4--5 h
+  & The rover spawns, accepts velocity commands, and publishes odometry and
+    laser scans. \\
+4 & Hazard and mission logic & 3--5 h
+  & Hazard values are reproducible; services and safety-related state
+    transitions behave as specified. \\
+5 & Mission integration & 4--5 h
+  & One launch command produces waypoint motion, inspection stops, hazard
+    retreat, RViz2 data, and CSV output. \\
+6 & Validation and portfolio & 3--5 h
+  & Tests, validation records, documentation, and a factual demonstration form
+    a reproducible portfolio artifact. \\
+\bottomrule
+\end{tabularx}
+\caption{Six-module learning sequence.}
+\end{table}
+
+\newpage
+\section{Module 1: ROS 2 workspace and communication fundamentals}
+
+\textbf{Estimated time:} 2--3 hours
+
+\subsection{Purpose}
+
+Module 1 creates the smallest useful ROS~2 system in the course: one Python node
+publishes a numbered inspection-status string, and a second node subscribes and
+logs it. The example uses a separate training topic so it cannot be confused
+with the final strongly typed mission-state interface.
+
+\subsection{Why it comes first}
+
+Every later feature depends on the same fundamental workflow: package metadata
+must be correct, \texttt{colcon} must install an executable, each terminal must
+source the correct environment, and the ROS graph must connect matching topic
+names and message types. Learning this with two small nodes produces a clean
+diagnostic baseline.
+
+\subsection{Learning objectives}
+
+The student will be able to:
+
+\begin{itemize}
+  \item distinguish a workspace, package, Python module, executable, node,
+        topic, and message instance;
+  \item build one package and source the resulting overlay;
+  \item explain how \texttt{package.xml}, \texttt{setup.py}, the resource
+        marker, and console entry points support discovery;
+  \item create a timer-driven publisher and callback-driven subscriber;
+  \item inspect nodes, topics, types, endpoints, parameters, and message rates
+        with ROS~2 command-line tools;
+  \item validate configuration instead of silently accepting invalid values.
+\end{itemize}
+
+\subsection{Core concepts}
+
+ROS graph discovery, publishers, subscribers, typed messages, callback
+execution, QoS queue depth, parameters, launch files, package installation,
+base environments, and workspace overlays.
+
+\subsection{Principal deliverables}
+
+\begin{itemize}
+  \item \texttt{hazard\_inspection\_control} Python package;
+  \item \texttt{inspection\_status\_publisher} executable;
+  \item \texttt{inspection\_status\_monitor} executable;
+  \item \texttt{/training/inspection\_status} String topic;
+  \item introductory YAML parameter file and two-node launch file;
+  \item recorded command-line evidence and a small parameter/code exercise.
+\end{itemize}
+
+\keypoint{ROS 2 components do not communicate because their Python files know
+about one another. They communicate through discoverable, named, typed
+interfaces. Package installation and environment sourcing make those
+components available to ROS 2 tools.}
+
+\subsection{Verification gate}
+
+The student must show both nodes in \texttt{ros2 node list}, inspect the topic's
+type and endpoints, echo a message, measure approximately 1~Hz at the default
+setting, modify the configured rate, and demonstrate that a non-positive timer
+period is rejected.
+
+\subsection{Mechanical-engineering connection}
+
+The topic contract is analogous to an instrument interface: signal identity,
+units or representation, update rate, and expected consumers must agree. A
+running process is not evidence that the measurement chain is connected.
+
+\subsection{Suggested commits}
+
+\begin{itemize}
+  \item \texttt{chore: initialize ROS 2 workspace}
+  \item \texttt{feat: add basic ROS 2 communication nodes}
+\end{itemize}
+
+\section{Module 2: Robot model, coordinate frames, and RViz2}
+
+\textbf{Estimated time:} 3--5 hours
+
+\subsection{Purpose}
+
+Module 2 describes the rover using Xacro and primitive geometry. The model
+includes visual, collision, and inertial definitions together with
+\texttt{base\_footprint}, \texttt{base\_link}, wheel, caster,
+\texttt{laser\_frame}, and \texttt{sensor\_frame} links. RViz2 is used to
+inspect the model and transform tree without simulation physics.
+
+\subsection{Why it follows Module 1}
+
+Robot-state publishing is itself a ROS~2 data flow. The student now applies the
+communication and inspection workflow from Module 1 to a structured mechanical
+model. Separating RViz verification from Gazebo keeps geometry and transform
+errors distinct from contact and dynamics errors.
+
+\subsection{Learning objectives}
+
+The student will be able to:
+
+\begin{itemize}
+  \item explain the difference between a link and a joint;
+  \item use Xacro properties and macros to avoid repeated dimensions;
+  \item define realistic simple masses, centers of mass, and inertia tensors;
+  \item distinguish visual geometry from collision geometry;
+  \item define joint origins and axes using ROS coordinate conventions;
+  \item explain every frame in the rover's TF tree;
+  \item use \texttt{robot\_state\_publisher}, RViz2, \texttt{tf2\_echo}, and
+        frame-graph tools to verify the model.
+\end{itemize}
+
+\subsection{Core concepts}
+
+URDF, Xacro, links, joints, origins, roll--pitch--yaw, inertial properties,
+collision geometry, visual geometry, \texttt{/tf}, \texttt{/tf\_static}, and
+the distinction between robot state and world pose.
+
+\subsection{Principal deliverables}
+
+\begin{itemize}
+  \item \texttt{hazard\_inspection\_description} package;
+  \item complete rover Xacro using primitive shapes;
+  \item display launch file and RViz2 configuration;
+  \item verified frame tree and screenshots from multiple viewpoints;
+  \item dimensional and inertia sanity-check notes.
+\end{itemize}
+
+\keypoint{A robot model is an engineering coordinate-system contract. A model
+that looks correct from one camera angle can still have a wrong joint axis,
+frame origin, collision envelope, or inertia tensor. Verify structure, not only
+appearance.}
+
+\subsection{Verification gate}
+
+The Xacro must expand without errors, RViz2 must show all expected links, wheel
+motion must occur around the intended axes, and the generated frame tree must
+match the documented parent--child relationships. The student must explain why
+\texttt{base\_footprint} and \texttt{base\_link} are separate.
+
+\subsection{Mechanical-engineering connection}
+
+This module directly uses CAD-style coordinate reasoning, mass properties,
+clearance thinking, and simplified modeling. The student should treat every
+dimension and inertia as a justified approximation, not decoration.
+
+\subsection{Suggested commit}
+
+\texttt{feat: add rover URDF and TF model}
+
+\section{Module 3: Gazebo Harmonic simulation and sensor integration}
+
+\textbf{Estimated time:} 4--5 hours
+
+\subsection{Purpose}
+
+Module 3 introduces a computationally light industrial world, spawns the Xacro
+rover in \gazebo{}, and connects Gazebo Transport to ROS~2 through
+\texttt{ros\_gz}. The rover receives velocity commands and publishes odometry,
+joint states, transforms, and a simulated 2D laser scan.
+
+\subsection{Why it follows Module 2}
+
+Simulation adds contacts, friction, gravity, update rates, plugins, and bridge
+configuration. These are easier to diagnose after the static model and TF tree
+have already been accepted. The student can compare Gazebo behavior against a
+known-good RViz representation.
+
+\subsection{Learning objectives}
+
+The student will be able to:
+
+\begin{itemize}
+  \item distinguish Gazebo Transport topics from ROS~2 topics;
+  \item explain why a bridge is required and verify bridge direction and type;
+  \item configure differential-drive wheel joints, separation, radius, and
+        odometry publication;
+  \item configure a light ray/lidar sensor and connect its frame correctly;
+  \item create an SDF world with floor, walls, a narrow passage, two inspection
+        stations, a start area, and a marked hazard zone;
+  \item command the rover with \texttt{geometry\_msgs/msg/Twist};
+  \item inspect odometry signs, frame identifiers, scan ranges, and update rates.
+\end{itemize}
+
+\subsection{Core concepts}
+
+SDF worlds, simulation systems/plugins, differential-drive kinematics, wheel
+parameters, contact/friction approximations, simulation time, ROS--Gazebo
+bridges, odometry, laser scans, and joint-state publication.
+
+\subsection{Principal deliverables}
+
+\begin{itemize}
+  \item \texttt{hazard\_inspection\_sim} package and industrial world;
+  \item Gazebo-specific Xacro additions;
+  \item robot spawning and simulation launch support;
+  \item bridge configuration for \texttt{/cmd\_vel}, \texttt{/odom},
+        \texttt{/scan}, and \texttt{/joint\_states};
+  \item evidence of forward, reverse, and rotation commands;
+  \item RViz2 visualization of odometry and laser data.
+\end{itemize}
+
+\keypoint{A simulator is another subsystem with its own interfaces and
+assumptions. Verify commands, measurements, frames, units, and time at the
+boundary instead of treating the simulation as a black box.}
+
+\subsection{Verification gate}
+
+The rover must spawn at the start area, remain physically stable, respond with
+the correct sign to manual velocity commands, report plausible odometry, and
+show laser returns from simple barriers. The student must compare wheel radius
+and separation in the model with the differential-drive configuration.
+
+\subsection{Mechanical-engineering connection}
+
+This module applies idealization and model validation: simplified geometry and
+physics are acceptable only when their limitations are stated. The goal is
+repeatable software integration, not a high-fidelity tire or contact model.
+
+\subsection{Suggested commit}
+
+\texttt{feat: integrate rover with Gazebo Harmonic}
+
+\section{Module 4: Hazard monitoring, parameters, services, and mission states}
+
+\textbf{Estimated time:} 3--5 hours
+
+\subsection{Purpose}
+
+Module 4 implements a mathematical environmental hazard field based on rover
+position. It also establishes mission command services and an explicit
+finite-state model before closed-loop waypoint motion is added.
+
+The nominal hazard function is
+
+\begin{equation}
+H(x,y) = H_{0} + H_{p}
+\exp\left(-\frac{(x-x_{h})^{2} + (y-y_{h})^{2}}{s}\right) + n,
+\end{equation}
+
+where $H_{0}$ is the baseline, $H_{p}$ is the peak contribution,
+$(x_{h},y_{h})$ is the hazard center, $s$ controls spatial spread, and $n$ is
+bounded pseudorandom noise. A configurable seed makes test runs reproducible.
+
+\subsection{Why it follows Module 3}
+
+The hazard node needs a trusted rover position from odometry. Once the odometry
+contract is verified, the hazard calculation can be tested independently from
+the controller. The finite-state machine is introduced here so that state
+transitions can be reasoned about before motion adds timing and geometry.
+
+\subsection{Learning objectives}
+
+The student will be able to:
+
+\begin{itemize}
+  \item convert odometry position into a deterministic simulated measurement;
+  \item use parameters for hazard location, peak, spread, noise, seed, and rate;
+  \item validate parameter ranges and reject invalid sensor inputs;
+  \item explain reproducibility and bounded noise in a simulation test;
+  \item expose start, reset, and abort operations with standard Trigger services;
+  \item represent mission behavior with explicit states and permitted
+        transitions;
+  \item distinguish a measurement threshold from a complete safety case.
+\end{itemize}
+
+\subsection{Core concepts}
+
+Parameter declaration and validation, deterministic random number generation,
+services, request/response semantics, custom messages, finite-state machines,
+threshold behavior, invalid values, and separation of sensing from decisions.
+
+\subsection{Principal deliverables}
+
+\begin{itemize}
+  \item \texttt{hazard\_sensor\_node};
+  \item configurable and documented hazard calculation;
+  \item \texttt{MissionState.msg} interface;
+  \item mission manager with start, reset, and abort services;
+  \item explicit states: \texttt{IDLE}, \texttt{MOVING\_TO\_WAYPOINT},
+        \texttt{INSPECTING}, \texttt{HAZARD\_DETECTED},
+        \texttt{RETREATING}, \texttt{MISSION\_COMPLETE}, and
+        \texttt{ABORTED};
+  \item command-line tests using synthetic odometry and service calls.
+\end{itemize}
+
+\keypoint{Safety-related behavior should be explicit, observable, and
+testable. A threshold is only one input to a state decision; stale data, NaN
+values, missing updates, reset rules, and service semantics must also be
+defined.}
+
+\subsection{Verification gate}
+
+For identical pose, parameters, and random seed, the hazard sequence must be
+repeatable. Moving synthetic odometry toward the hazard center must increase
+the nominal value. Invalid odometry must not produce a plausible-looking
+measurement. Start, abort, and reset calls must produce only documented state
+transitions.
+
+\subsection{Mechanical-engineering connection}
+
+The mathematical field resembles a simplified exposure or temperature model.
+Parameter sweeps, noise bounds, threshold selection, sensor validity, and
+failure-mode reasoning connect directly to test engineering and hazard analysis.
+
+\subsection{Suggested commits}
+
+\begin{itemize}
+  \item \texttt{feat: add simulated hazard sensor}
+  \item \texttt{feat: add mission services and state model}
+\end{itemize}
+
+\section{Module 5: Waypoint control, defensive behavior, and integration}
+
+\textbf{Estimated time:} 4--5 hours
+
+\subsection{Purpose}
+
+Module 5 completes the first integrated mission. A proportional controller
+drives toward predefined 2D waypoints, pauses for inspection, and reacts to a
+hazard by immediately commanding zero velocity before retreating toward the
+previous safe waypoint or start. A logger records synchronized mission
+observations, and a bringup package starts the complete demonstration.
+
+For rover pose $(x,y,\theta)$ and waypoint $(x_{w},y_{w})$, the controller uses
+
+\begin{align}
+d &= \sqrt{(x_{w}-x)^{2} + (y_{w}-y)^{2}}, \\
+\theta_{d} &= \operatorname{atan2}(y_{w}-y, x_{w}-x), \\
+e_{\theta} &= \operatorname{normalize}(\theta_{d}-\theta).
+\end{align}
+
+Angular velocity is proportional to heading error and linear velocity is
+proportional to distance only when alignment is adequate. Both commands are
+clamped. This is an educational controller for system integration, not a
+production navigation algorithm.
+
+\subsection{Why it follows Module 4}
+
+The controller combines nearly every earlier interface. Implementing it after
+the model, simulator, odometry, hazard sensor, services, and states are verified
+reduces the number of simultaneous unknowns. Safety transitions already have
+defined semantics before they command real simulated motion.
+
+\subsection{Learning objectives}
+
+The student will be able to:
+
+\begin{itemize}
+  \item calculate distance, desired heading, and normalized heading error;
+  \item implement rotate-then-advance proportional waypoint behavior;
+  \item reduce linear speed near a target and saturate both velocity components;
+  \item stop on stale odometry, stale hazard data, excessive hazard, or invalid
+        numeric values;
+  \item connect finite-state decisions to explicit zero, forward, rotational,
+        and retreat commands;
+  \item log time, pose, yaw, commands, hazard, and mission state safely to CSV;
+  \item integrate Gazebo, bridges, nodes, RViz2, parameters, and spawning in one
+        launch command;
+  \item explain why the waypoint controller is not obstacle-aware navigation.
+\end{itemize}
+
+\subsection{Core concepts}
+
+Planar pose extraction, angle normalization, proportional feedback, velocity
+saturation, waypoint tolerance, inspection dwell time, watchdog timeouts,
+fail-safe stops, path visualization, CSV resource management, launch arguments,
+and integration configuration.
+
+\subsection{Principal deliverables}
+
+\begin{itemize}
+  \item \texttt{mission\_controller\_node};
+  \item \texttt{mission\_logger\_node};
+  \item waypoint and safety parameters;
+  \item published mission state and planned/visited path;
+  \item complete \texttt{hazard\_inspection\_bringup} package;
+  \item \texttt{inspection\_demo.launch.py} with RViz and Gazebo GUI arguments;
+  \item timestamped CSV output and a documented example.
+\end{itemize}
+
+\keypoint{The essential control lesson is not merely ``make the rover move.''
+It is ``make every commanded motion conditional on valid, recent inputs and an
+explicit mission state, with observable limits and a deterministic stop path.''}
+
+\subsection{Verification gate}
+
+One launch command must start the complete system. The rover must visit the
+safe inspection location, stop for the configured duration, encounter rising
+hazard on the dangerous leg, publish a zero command, enter the hazard and
+retreat states, and stop at a safe destination. RViz2 must show the intended
+model, TF, scan, path, and status information. The CSV must contain the required
+columns and close cleanly after shutdown.
+
+\subsection{Mechanical-engineering connection}
+
+This module combines closed-loop behavior with limits, tolerances, sampling,
+and fault responses. The CSV log plays the role of test instrumentation: it
+supports comparison between expected state transitions and observed motion.
+
+\subsection{Suggested commits}
+
+\begin{itemize}
+  \item \texttt{feat: implement waypoint mission controller}
+  \item \texttt{feat: add hazard-triggered safety behavior}
+  \item \texttt{feat: add CSV mission logging}
+\end{itemize}
+
+\section{Module 6: Testing, validation, and portfolio communication}
+
+\textbf{Estimated time:} 3--5 hours
+
+\subsection{Purpose}
+
+Module 6 converts a working demonstration into a defensible engineering
+project. Pure calculations and state rules receive focused unit tests. ROS~2
+CLI procedures exercise the integrated system. A requirements-based validation
+matrix records expected and actual results. Documentation, screenshots, a short
+video, resume bullets, and statement-of-purpose language are based only on the
+verified scope.
+
+\subsection{Why it comes last}
+
+Detailed validation requires stable interfaces and behavior. Portfolio claims
+must follow evidence, not precede it. Testing is discussed throughout the
+course, but this final module consolidates regression tests and acceptance
+records after the first complete mission is functioning.
+
+This does not mean ``testing happens only at the end.'' Every prior module has
+a verification gate. Module 6 formalizes those checks, adds repeatable tests,
+and reviews the entire repository for consistency.
+
+\subsection{Learning objectives}
+
+The student will be able to:
+
+\begin{itemize}
+  \item separate pure mathematics and state rules from ROS node plumbing so
+        they can be unit-tested quickly;
+  \item write pytest cases for hazard calculation, angle normalization,
+        waypoint geometry, hazard transitions, saturation, and invalid data;
+  \item perform integration checks using nodes, topics, services, parameters,
+        TF, and recorded output;
+  \item create a requirement-to-test validation matrix with actual-result and
+        pass/fail fields;
+  \item perform a consistency review of package, executable, entry-point,
+        topic, frame, launch, parameter, dependency, build, run, and test names;
+  \item design a factual 60--90 second demonstration;
+  \item explain limitations and future extensions without implying that they
+        are already implemented.
+\end{itemize}
+
+\subsection{Core concepts}
+
+Unit tests, integration tests, boundary cases, fault injection, deterministic
+fixtures, acceptance criteria, traceability, regression protection,
+reproducibility, technical documentation, and responsible portfolio claims.
+
+\subsection{Principal deliverables}
+
+\begin{itemize}
+  \item pytest suite covering the required calculations and failure cases;
+  \item integration-test command sequence;
+  \item completed or student-fillable validation matrix;
+  \item professional root README and six complete guided lessons;
+  \item architecture, validation, and learning review documents;
+  \item screenshots and a technical 60--90 second demonstration storyboard;
+  \item final dependency and naming consistency review.
+\end{itemize}
+
+\keypoint{A portfolio project is credible when another person can reproduce
+the setup, understand the interfaces, see the limitations, run the tests, and
+connect every claim to observable evidence.}
+
+\subsection{Verification gate}
+
+All unit tests must pass, the documented integration scenario must be
+repeatable, validation entries must contain actual evidence, and every command
+in the README must match an installed package or executable. The student must
+be able to explain at least one design tradeoff, one failure mode, one debugging
+example, and one limitation without relying on scripted narration.
+
+\subsection{Mechanical-engineering connection}
+
+This module closely parallels verification and validation practice: define a
+requirement, select a method, state an expected result, collect an actual
+result, assess pass/fail, and retain evidence. Failure-analysis experience is
+particularly valuable when discussing stale inputs, invalid values, bridge
+misconfiguration, and unsafe control assumptions.
+
+\subsection{Suggested commits}
+
+\begin{itemize}
+  \item \texttt{test: add controller and sensor unit tests}
+  \item \texttt{docs: complete project documentation}
+\end{itemize}
+
+\section{Cross-module learning priorities}
+
+\subsection{Interface literacy}
+
+The student should be able to identify every important node, topic, service,
+message type, parameter, and frame, and explain which component owns it. This
+is more important than memorizing ROS commands.
+
+\subsection{Coordinate and unit discipline}
+
+Frame identity, SI units, joint axes, pose conventions, and timestamps must be
+treated as engineering requirements. Many apparent controller failures are
+actually frame, sign, or unit failures.
+
+\subsection{Observability before complexity}
+
+Every subsystem should expose enough information to diagnose it independently.
+The course therefore favors explicit mission states, command topics, parameter
+files, logs, and simple models over hidden or overly abstract behavior.
+
+\subsection{Defensive behavior}
+
+Stopping on stale, missing, NaN, or threshold-exceeding data is part of the
+controller design. The simulation demonstrates a software pattern; it does not
+constitute a certified safety mechanism.
+
+\subsection{Technical honesty}
+
+The completed project demonstrates ROS~2 integration, simulation, simple
+feedback control, state-based behavior, logging, and validation. Optional later
+work may add Nav2, SLAM, more realistic sensor models, automated launch testing,
+or physical hardware. Those extensions must not be described as completed
+until they are implemented and tested.
+
+\section{Assessment and student participation}
+
+Each module uses four forms of evidence:
+
+\begin{enumerate}
+  \item \textbf{Prediction:} state the expected behavior before running.
+  \item \textbf{Observation:} collect terminal, RViz2, Gazebo, test, or CSV
+        evidence.
+  \item \textbf{Explanation:} relate the observation to interfaces, frames,
+        parameters, or state logic.
+  \item \textbf{Modification:} make a bounded change and predict its effect.
+\end{enumerate}
+
+The instructor should not advance automatically. The student reports results
+and errors after each module. When an error occurs, the terminal output is used
+to identify the smallest justified correction. Replacing a complete package is
+not an acceptable substitute for understanding a local fault.
+
+\section{Expected final capability}
+
+After all six modules, the student should be able to launch the project with
+
+\begin{verbatim}
+ros2 launch hazard_inspection_bringup inspection_demo.launch.py
+\end{verbatim}
+
+and explain the complete chain from Gazebo pose and lidar generation, through
+bridged ROS~2 messages and mathematical hazard sensing, to mission-state
+decisions, saturated velocity commands, retreat behavior, RViz2 displays, CSV
+records, and validation tests.
+
+The strongest portfolio outcome is not the visual demonstration by itself. It
+is the student's ability to discuss why the architecture was separated, how
+the controller works, which assumptions limit it, how invalid data are handled,
+what evidence was collected, and what would have to change for more realistic
+navigation or hardware deployment.
+
+\section{Recommended discussion questions}
+
+At the end of the course, the student should be prepared to answer:
+
+\begin{enumerate}
+  \item Why were five packages used instead of one package?
+  \item How does ROS~2 discover a Python executable and its package resources?
+  \item What is the difference between \texttt{base\_link},
+        \texttt{base\_footprint}, and \texttt{odom}?
+  \item Which data cross the Gazebo--ROS bridge, and in which direction?
+  \item Why is a fixed random seed useful when validating the hazard sensor?
+  \item How are heading error and velocity saturation calculated?
+  \item Which conditions force a stop, retreat, or abort?
+  \item What does the CSV demonstrate, and what can it not prove?
+  \item Why is this controller not equivalent to Nav2 or autonomous navigation?
+  \item Which test or debugging result most strongly changed the design?
+\end{enumerate}
+
+\section{Document build command}
+
+This file may be compiled on Ubuntu after installing a standard LaTeX toolchain:
+
+\begin{verbatim}
+sudo apt install -y latexmk texlive-latex-base \
+  texlive-latex-recommended texlive-fonts-recommended
+cd hazard_inspection_ws/docs
+latexmk -pdf course_outline.tex
+\end{verbatim}
+
+Run \texttt{latexmk -c} afterward if intermediate LaTeX files should be
+removed. Compiling this outline is optional and does not affect the ROS~2
+workspace build.
+
+\end{document}

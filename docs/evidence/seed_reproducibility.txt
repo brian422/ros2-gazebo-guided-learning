@@ -1,0 +1,48 @@
+Seeded hazard-noise reproducibility evidence
+Date: 2026-08-08
+Tested Git commit: not yet supplied
+
+Controlled test configuration:
+- two independently launched hazard sensor nodes
+- output topics: /hazard/a and /hazard/b
+- constant odometry position: (0.0 m, 0.0 m, 0.0 m)
+- random_seed: 42 for both nodes
+- publish_frequency: 2.0 Hz for both nodes
+- default bounded noise amplitude: 0.05
+
+First five valid samples from /hazard/a:
+1. 0.21403282570210663
+2. 0.15259122137858494
+3. 0.17759307769323018
+4. 0.17241121967120054
+5. 0.22373726727271950
+
+First five valid samples from /hazard/b:
+1. 0.21403282570210663
+2. 0.15259122137858494
+3. 0.17759307769323018
+4. 0.17241121967120054
+5. 0.22373726727271950
+
+Direct capture-file verification:
+- seed_a.txt valid samples: 115
+- seed_b.txt valid samples: 81
+- common prefix compared: 81 samples
+- first mismatch index: none
+
+The capture durations differed slightly, so the files contain different total
+sample counts. Every sample in their 81-value common prefix was identical.
+
+Result:
+- The readings vary over time because bounded noise is enabled.
+- Two independent streams with the same seed, model configuration, and fixed
+  input position produced identical ordered noise sequences.
+
+Pass: seeded hazard-noise sequence is reproducible under controlled equivalent
+conditions.
+
+Evidence note: the submitted terminal transcript duplicated the
+hazard_sensor_b startup block for Terminals D and E. The independently written
+seed_a.txt and seed_b.txt files were therefore checked directly. Their distinct
+file timestamps, different capture lengths, and identical 81-sample common
+prefix support the result without relying on the duplicated transcript.

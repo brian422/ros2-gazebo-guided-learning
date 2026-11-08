@@ -1,0 +1,19 @@
+hazard_sensor_node:
+  ros__parameters:
+    # Far-field reading and centre-of-zone increase.
+    baseline: 0.20
+    peak: 10.0
+
+    # Matches the red-orange marker in inspection_world.sdf.
+    hazard_zone_x: 3.50
+    hazard_zone_y: 1.30
+
+    # Used in exp(-distance_squared / spread), so units are square metres.
+    spread: 1.20
+
+    # Each sample receives uniform noise in [-amplitude, +amplitude].
+    noise_amplitude: 0.05
+    random_seed: 42
+
+    publish_frequency: 10.0
+    odom_timeout: 1.0

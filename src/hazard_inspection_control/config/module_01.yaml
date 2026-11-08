@@ -1,0 +1,5 @@
+inspection_status_publisher:
+  ros__parameters:
+    station_name: training_station
+    publish_period_s: 1.0
+

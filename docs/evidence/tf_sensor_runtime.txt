@@ -1,0 +1,49 @@
+TF and sensor-runtime evidence
+Date: 2026-08-08
+Tested Git commit: not yet supplied
+
+TF graph artifact:
+- File: frames.pdf
+- Connected chain: odom -> base_footprint -> base_link
+- Children of base_link: left_wheel_link, right_wheel_link, caster_link,
+  laser_frame, sensor_frame
+- Dynamic transforms were visible for odom and both wheel links.
+- Fixed transforms were visible for base_link, caster, laser, and sensor frames.
+
+Endpoint transform sample: odom -> sensor_frame
+- Translation: [-0.080, -0.000, 0.210]
+- Quaternion [x, y, z, w]: [0.000, 0.000, 0.000, 1.000]
+- RPY radians: [0.000, -0.000, 0.000]
+- The transform repeated at multiple simulation timestamps.
+
+The first tf2_echo line briefly reported that odom did not exist while the
+listener was starting. Valid repeated transforms followed immediately, so this
+was a startup-discovery delay rather than a disconnected frame tree.
+
+Odometry sample:
+- header.frame_id: odom
+- child_frame_id: base_footprint
+- position [x, y, z]: approximately [-1.715e-12, -4.824e-31, 0.0]
+- orientation [x, y, z, w]: [0.0, 0.0, 4.733e-18, 1.0]
+- linear.x: approximately 2.027e-19
+- angular.z: approximately 1.483e-19
+- All recorded pose and twist values were finite.
+
+Joint-state sample:
+- names: left_wheel_joint, right_wheel_joint
+- positions: approximately [-1.905e-11, -1.905e-11]
+- velocities: approximately [7.809e-19, 1.366e-18]
+- efforts: [0.0, 0.0]
+
+Observed topic-rate summaries:
+- /odom: 14.661 Hz, 90-message window
+- /scan: 4.950 Hz, 27-message window
+- /joint_states: 486.673 Hz, 2500-message window
+
+Result:
+- The rover was spawned and published finite odometry.
+- Odometry, laser scans, and joint states were repeatedly published.
+- Both wheel joints were present in the joint-state stream.
+- The required TF tree was connected through both dynamic and fixed frames.
+
+Pass: TF connectivity and core simulated sensor/state publication verified.

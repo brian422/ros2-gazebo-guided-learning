@@ -1,0 +1,313 @@
+<?xml version="1.0"?>
+<sdf version="1.10">
+  <world name="inspection_world">
+
+    <!-- Core Gazebo Harmonic systems. -->
+    <plugin
+      filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics"/>
+    <plugin
+      filename="gz-sim-user-commands-system"
+      name="gz::sim::systems::UserCommands"/>
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin
+      filename="gz-sim-sensors-system"
+      name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <gravity>0 0 -9.81</gravity>
+    <magnetic_field>5.64e-6 22.9e-6 -42.8e-6</magnetic_field>
+    <atmosphere type="adiabatic"/>
+
+    <physics name="one_millisecond_step" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+
+    <scene>
+      <ambient>0.45 0.45 0.48 1</ambient>
+      <background>0.07 0.08 0.10 1</background>
+      <shadows>true</shadows>
+      <grid>false</grid>
+    </scene>
+
+    <light name="industrial_overhead_light" type="directional">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 8 0 0 0</pose>
+      <diffuse>0.9 0.9 0.85 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>50</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.3 0.2 -1.0</direction>
+    </light>
+
+    <!-- ============================================================ -->
+    <!-- Floor                                                        -->
+    <!-- ============================================================ -->
+    <model name="industrial_floor">
+      <static>true</static>
+      <link name="floor_link">
+        <collision name="floor_collision">
+          <pose>0 0 -0.05 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>12 8 0.10</size>
+            </box>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>0.9</mu>
+                <mu2>0.9</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="floor_visual">
+          <pose>0 0 -0.05 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>12 8 0.10</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.28 0.29 0.31 1</ambient>
+            <diffuse>0.34 0.35 0.37 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============================================================ -->
+    <!-- Outer perimeter walls                                        -->
+    <!-- ============================================================ -->
+    <model name="north_wall">
+      <static>true</static>
+      <pose>0 3.95 0.40 0 0 0</pose>
+      <link name="wall_link">
+        <collision name="collision">
+          <geometry><box><size>12 0.10 0.80</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>12 0.10 0.80</size></box></geometry>
+          <material>
+            <ambient>0.58 0.60 0.63 1</ambient>
+            <diffuse>0.68 0.70 0.73 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="south_wall">
+      <static>true</static>
+      <pose>0 -3.95 0.40 0 0 0</pose>
+      <link name="wall_link">
+        <collision name="collision">
+          <geometry><box><size>12 0.10 0.80</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>12 0.10 0.80</size></box></geometry>
+          <material>
+            <ambient>0.58 0.60 0.63 1</ambient>
+            <diffuse>0.68 0.70 0.73 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="east_wall">
+      <static>true</static>
+      <pose>5.95 0 0.40 0 0 0</pose>
+      <link name="wall_link">
+        <collision name="collision">
+          <geometry><box><size>0.10 8 0.80</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.10 8 0.80</size></box></geometry>
+          <material>
+            <ambient>0.58 0.60 0.63 1</ambient>
+            <diffuse>0.68 0.70 0.73 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="west_wall">
+      <static>true</static>
+      <pose>-5.95 0 0.40 0 0 0</pose>
+      <link name="wall_link">
+        <collision name="collision">
+          <geometry><box><size>0.10 8 0.80</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.10 8 0.80</size></box></geometry>
+          <material>
+            <ambient>0.58 0.60 0.63 1</ambient>
+            <diffuse>0.68 0.70 0.73 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============================================================ -->
+    <!-- Narrow passage: 1.0 m clear width centred at y = -1.5 m.     -->
+    <!-- The 0.42 m-wide rover can pass, but lidar clearly sees walls. -->
+    <!-- ============================================================ -->
+    <model name="passage_north_barrier">
+      <static>true</static>
+      <pose>0.50 -0.95 0.35 0 0 0</pose>
+      <link name="barrier_link">
+        <collision name="collision">
+          <geometry><box><size>3.0 0.10 0.70</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>3.0 0.10 0.70</size></box></geometry>
+          <material>
+            <ambient>0.80 0.58 0.06 1</ambient>
+            <diffuse>0.92 0.68 0.08 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="passage_south_barrier">
+      <static>true</static>
+      <pose>0.50 -2.05 0.35 0 0 0</pose>
+      <link name="barrier_link">
+        <collision name="collision">
+          <geometry><box><size>3.0 0.10 0.70</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>3.0 0.10 0.70</size></box></geometry>
+          <material>
+            <ambient>0.80 0.58 0.06 1</ambient>
+            <diffuse>0.92 0.68 0.08 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============================================================ -->
+    <!-- Route markers: visual only, so they do not affect physics.    -->
+    <!-- ============================================================ -->
+    <model name="starting_area">
+      <static>true</static>
+      <pose>-4.0 -2.5 0.006 0 0 0</pose>
+      <link name="marker_link">
+        <visual name="start_marker">
+          <geometry><box><size>1.0 1.0 0.012</size></box></geometry>
+          <material>
+            <ambient>0.05 0.46 0.18 1</ambient>
+            <diffuse>0.08 0.72 0.28 1</diffuse>
+            <emissive>0.01 0.08 0.02 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="inspection_station_one">
+      <static>true</static>
+      <pose>-1.60 -1.50 0.008 0 0 0</pose>
+      <link name="marker_link">
+        <visual name="station_marker">
+          <geometry>
+            <cylinder><radius>0.42</radius><length>0.016</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.04 0.28 0.68 1</ambient>
+            <diffuse>0.08 0.42 0.92 1</diffuse>
+            <emissive>0.01 0.03 0.10 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="inspection_station_two">
+      <static>true</static>
+      <pose>3.50 1.30 0.010 0 0 0</pose>
+      <link name="marker_link">
+        <visual name="station_marker">
+          <geometry>
+            <cylinder><radius>0.42</radius><length>0.020</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.05 0.30 0.70 1</ambient>
+            <diffuse>0.10 0.48 0.95 1</diffuse>
+            <emissive>0.01 0.04 0.12 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!--
+      The red-orange disk is only a visual marker. Module 4 computes the
+      hazard mathematically from odometry; Gazebo physics does not generate it.
+    -->
+    <model name="hazard_zone_marker">
+      <static>true</static>
+      <pose>3.50 1.30 0.006 0 0 0</pose>
+      <link name="marker_link">
+        <visual name="hazard_disk">
+          <geometry>
+            <cylinder><radius>1.10</radius><length>0.012</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.72 0.08 0.02 0.65</ambient>
+            <diffuse>1.00 0.16 0.02 0.65</diffuse>
+            <emissive>0.22 0.02 0.00 0.65</emissive>
+          </material>
+          <transparency>0.35</transparency>
+        </visual>
+      </link>
+    </model>
+
+    <!-- A few lightweight industrial obstacles improve lidar visibility. -->
+    <model name="equipment_cabinet">
+      <static>true</static>
+      <pose>-3.0 1.8 0.55 0 0 0.18</pose>
+      <link name="cabinet_link">
+        <collision name="collision">
+          <geometry><box><size>0.8 0.55 1.10</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.8 0.55 1.10</size></box></geometry>
+          <material>
+            <ambient>0.18 0.25 0.30 1</ambient>
+            <diffuse>0.24 0.34 0.40 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="storage_tank">
+      <static>true</static>
+      <pose>1.9 2.4 0.65 0 0 0</pose>
+      <link name="tank_link">
+        <collision name="collision">
+          <geometry>
+            <cylinder><radius>0.48</radius><length>1.30</length></cylinder>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <cylinder><radius>0.48</radius><length>1.30</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0.42 0.46 0.48 1</ambient>
+            <diffuse>0.58 0.62 0.64 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

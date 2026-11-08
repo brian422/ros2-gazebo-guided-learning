@@ -1,0 +1,7 @@
+mission_controller_node:
+  ros__parameters:
+    # Module 4 exercises state decisions without commanding the rover.
+    enable_motion: false
+    hazard_threshold: 6.0
+    hazard_timeout: 1.0
+    status_publish_frequency: 2.0

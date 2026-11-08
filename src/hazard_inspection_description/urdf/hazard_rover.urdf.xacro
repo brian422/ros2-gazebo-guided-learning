@@ -1,0 +1,326 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"
+       name="hazard_inspection_rover">
+
+  <!--
+    Keep Gazebo-only tags in a separate file. Module 2 can still expand this
+    model without simulation plugins; Module 3 passes simulation:=true.
+  -->
+  <xacro:arg name="simulation" default="false"/>
+  <xacro:include filename="hazard_rover.gazebo.xacro"/>
+
+  <!-- ================================================================ -->
+  <!-- Module 2 model scope                                             -->
+  <!-- ================================================================ -->
+  <!--
+    This file defines geometry, joints, mass properties, and frames only.
+    Gazebo systems, simulated sensors, and differential-drive actuation live in
+    hazard_rover.gazebo.xacro and are enabled only when simulation:=true.
+
+    ROS convention used here:
+      +x points forward
+      +y points to the robot's left
+      +z points upward
+  -->
+
+  <!-- Primary chassis dimensions and mass (SI units: metres, kilograms). -->
+  <xacro:property name="base_length" value="0.50"/>
+  <xacro:property name="base_width" value="0.34"/>
+  <xacro:property name="base_height" value="0.14"/>
+  <xacro:property name="base_mass" value="9.00"/>
+  <xacro:property name="ground_clearance" value="0.05"/>
+  <xacro:property name="base_link_height"
+                  value="${ground_clearance + base_height / 2.0}"/>
+
+  <!-- Wheel dimensions and placement. -->
+  <xacro:property name="wheel_radius" value="0.09"/>
+  <xacro:property name="wheel_width" value="0.04"/>
+  <xacro:property name="wheel_mass" value="0.55"/>
+  <xacro:property name="wheel_y_offset"
+                  value="${base_width / 2.0 + wheel_width / 2.0}"/>
+  <xacro:property name="wheel_z_offset"
+                  value="${wheel_radius - base_link_height}"/>
+
+  <!-- Passive rear caster. It is fixed in Module 2 for visual simplicity. -->
+  <xacro:property name="caster_radius" value="0.035"/>
+  <xacro:property name="caster_mass" value="0.10"/>
+  <xacro:property name="caster_x_offset" value="-0.19"/>
+  <xacro:property name="caster_z_offset"
+                  value="${caster_radius - base_link_height}"/>
+
+  <!-- Sensor housing dimensions and masses. -->
+  <xacro:property name="laser_radius" value="0.04"/>
+  <xacro:property name="laser_height" value="0.05"/>
+  <xacro:property name="laser_mass" value="0.18"/>
+  <xacro:property name="sensor_length" value="0.08"/>
+  <xacro:property name="sensor_width" value="0.06"/>
+  <xacro:property name="sensor_height" value="0.04"/>
+  <xacro:property name="sensor_mass" value="0.12"/>
+
+  <!-- ================================================================ -->
+  <!-- Reusable inertia macros                                          -->
+  <!-- ================================================================ -->
+
+  <xacro:macro name="box_inertial" params="mass x y z">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${mass}"/>
+      <inertia
+        ixx="${mass * (y * y + z * z) / 12.0}"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="${mass * (x * x + z * z) / 12.0}"
+        iyz="0.0"
+        izz="${mass * (x * x + y * y) / 12.0}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- Cylinder whose symmetry axis is the link's y-axis, used for wheels. -->
+  <xacro:macro name="cylinder_y_inertial" params="mass radius length">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${mass}"/>
+      <inertia
+        ixx="${mass * (3.0 * radius * radius + length * length) / 12.0}"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="${mass * radius * radius / 2.0}"
+        iyz="0.0"
+        izz="${mass * (3.0 * radius * radius + length * length) / 12.0}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- Cylinder whose symmetry axis is the link's z-axis, used for lidar. -->
+  <xacro:macro name="cylinder_z_inertial" params="mass radius length">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${mass}"/>
+      <inertia
+        ixx="${mass * (3.0 * radius * radius + length * length) / 12.0}"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="${mass * (3.0 * radius * radius + length * length) / 12.0}"
+        iyz="0.0"
+        izz="${mass * radius * radius / 2.0}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="sphere_inertial" params="mass radius">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${mass}"/>
+      <inertia
+        ixx="${2.0 * mass * radius * radius / 5.0}"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="${2.0 * mass * radius * radius / 5.0}"
+        iyz="0.0"
+        izz="${2.0 * mass * radius * radius / 5.0}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- ================================================================ -->
+  <!-- Reusable colors                                                  -->
+  <!-- ================================================================ -->
+
+  <material name="industrial_blue">
+    <color rgba="0.12 0.32 0.55 1.0"/>
+  </material>
+  <material name="dark_rubber">
+    <color rgba="0.04 0.04 0.04 1.0"/>
+  </material>
+  <material name="wheel_marker_orange">
+    <color rgba="1.00 0.35 0.02 1.0"/>
+  </material>
+  <material name="caster_gray">
+    <color rgba="0.35 0.35 0.38 1.0"/>
+  </material>
+  <material name="laser_red">
+    <color rgba="0.80 0.08 0.06 1.0"/>
+  </material>
+  <material name="sensor_yellow">
+    <color rgba="0.95 0.65 0.05 1.0"/>
+  </material>
+
+  <!-- ================================================================ -->
+  <!-- Root and chassis                                                 -->
+  <!-- ================================================================ -->
+
+  <!-- Massless ground-projection frame. It remains on the floor plane. -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${base_link_height}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Main body frame, located at the geometric centre of the chassis. -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+      <material name="industrial_blue"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+    </collision>
+    <xacro:box_inertial
+      mass="${base_mass}"
+      x="${base_length}"
+      y="${base_width}"
+      z="${base_height}"/>
+  </link>
+
+  <!-- ================================================================ -->
+  <!-- Drive wheels                                                     -->
+  <!-- ================================================================ -->
+
+  <xacro:macro name="drive_wheel" params="side y_offset">
+    <link name="${side}_wheel_link">
+      <visual>
+        <!-- URDF cylinders point along z; rotate them to point along y. -->
+        <origin xyz="0 0 0" rpy="${pi / 2.0} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <material name="dark_rubber"/>
+      </visual>
+      <!--
+        A symmetric cylinder looks unchanged as it rotates. This small marker
+        makes wheel rotation visible in both RViz2 and Gazebo.
+      -->
+      <visual name="${side}_wheel_rotation_marker">
+        <origin
+          xyz="0 0 ${0.72 * wheel_radius}"
+          rpy="0 0 0"/>
+        <geometry>
+          <box size="0.025 ${wheel_width + 0.006} 0.018"/>
+        </geometry>
+        <material name="wheel_marker_orange"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi / 2.0} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+      </collision>
+      <xacro:cylinder_y_inertial
+        mass="${wheel_mass}"
+        radius="${wheel_radius}"
+        length="${wheel_width}"/>
+    </link>
+
+    <joint name="${side}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${side}_wheel_link"/>
+      <origin xyz="0 ${y_offset} ${wheel_z_offset}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="5.0" velocity="20.0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:drive_wheel side="left" y_offset="${wheel_y_offset}"/>
+  <xacro:drive_wheel side="right" y_offset="${-wheel_y_offset}"/>
+
+  <!-- ================================================================ -->
+  <!-- Passive caster                                                   -->
+  <!-- ================================================================ -->
+
+  <link name="caster_link">
+    <visual>
+      <geometry>
+        <sphere radius="${caster_radius}"/>
+      </geometry>
+      <material name="caster_gray"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="${caster_radius}"/>
+      </geometry>
+    </collision>
+    <xacro:sphere_inertial
+      mass="${caster_mass}"
+      radius="${caster_radius}"/>
+  </link>
+
+  <joint name="caster_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="caster_link"/>
+    <origin xyz="${caster_x_offset} 0 ${caster_z_offset}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================================================================ -->
+  <!-- Lidar housing and measurement frame                              -->
+  <!-- ================================================================ -->
+
+  <link name="laser_frame">
+    <visual>
+      <geometry>
+        <cylinder radius="${laser_radius}" length="${laser_height}"/>
+      </geometry>
+      <material name="laser_red"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="${laser_radius}" length="${laser_height}"/>
+      </geometry>
+    </collision>
+    <xacro:cylinder_z_inertial
+      mass="${laser_mass}"
+      radius="${laser_radius}"
+      length="${laser_height}"/>
+  </link>
+
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser_frame"/>
+    <origin
+      xyz="0.17 0 ${base_height / 2.0 + laser_height / 2.0}"
+      rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================================================================ -->
+  <!-- Environmental sensor housing and frame                           -->
+  <!-- ================================================================ -->
+
+  <link name="sensor_frame">
+    <visual>
+      <geometry>
+        <box size="${sensor_length} ${sensor_width} ${sensor_height}"/>
+      </geometry>
+      <material name="sensor_yellow"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${sensor_length} ${sensor_width} ${sensor_height}"/>
+      </geometry>
+    </collision>
+    <xacro:box_inertial
+      mass="${sensor_mass}"
+      x="${sensor_length}"
+      y="${sensor_width}"
+      z="${sensor_height}"/>
+  </link>
+
+  <joint name="sensor_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="sensor_frame"/>
+    <origin
+      xyz="-0.08 0 ${base_height / 2.0 + sensor_height / 2.0}"
+      rpy="0 0 0"/>
+  </joint>
+
+  <!-- Add physics, actuation, and lidar only for a Gazebo launch. -->
+  <xacro:if value="$(arg simulation)">
+    <xacro:hazard_rover_gazebo
+      wheel_separation="${2.0 * wheel_y_offset}"
+      wheel_radius="${wheel_radius}"/>
+  </xacro:if>
+
+</robot>
